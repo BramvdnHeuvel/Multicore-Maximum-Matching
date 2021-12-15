@@ -1,0 +1,1 @@
+docker run --rm -v $PWD:/usr/src/app -e NAME=$1 -it noordstar/multicorebsp:latest
