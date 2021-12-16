@@ -67,6 +67,47 @@ struct node *create_node(uint n, uint maxDegree) {
 }
 
 /**
+* Create a new graph structure with default settings.
+*
+* Parameters:
+* - `maxNodes`      The maximum amount of nodes you're expecting the graph
+                        to contain.
+*
+* Returns:          Pointer to the newly created graph.
+*/
+struct graph *create_graph(uint maxNodes) {
+    struct graph *g = malloc(sizeof(struct graph));
+
+    g->nodes  = malloc(maxNodes * sizeof(struct node *));
+    g->length = 0;
+
+    return g;
+}
+
+/**
+* Create multiple (sub)graphs.
+*
+* This function is generally used to split a graph up into multiple
+* subgraphs so that the graph can be distributed across processes
+* without any overlap of nodes.
+*
+* Parameters:
+* - `n`                 Amount of (sub)graphs to create
+* - `maxNodesPerGraph`  Maximum amount of nodes each graph may contain
+*
+* Returns:              Pointer to an array of pointers to graphs
+*/
+struct graph **create_subgraphs(uint n, uint maxNodesPerGraph) {
+    struct graph **subs = malloc(n * sizeof(struct graph *));
+
+    for (uint i=0; i<n; i++) {
+        subs[i] = create_graph(maxNodesPerGraph);
+    }
+
+    return subs;
+}
+
+/**
 * Connect two nodes to each other. The operation is symmetrical, 
 * so the order of the two nodes does not matter.
 *
@@ -80,6 +121,18 @@ void connect_nodes(struct node *a, struct node *b) {
 
     b->connectedTo[b->connections] = a->value;
     b->connections++;
+}
+
+/**
+* Add an existing node to a (sub)graph.
+*
+* Parameters:
+* - `n`         Node to add.
+* - `g`         Graph to add the node to.
+*/
+void add_to_graph(struct node *n, struct graph *g) {
+    g->nodes[g->length] = n;
+    g->length++;
 }
 
 /**
@@ -119,8 +172,7 @@ struct graph *initialize_graph() {
     scanf("%u %u", &amountOfNodes, &amountOfEdges);
     uint maxDegree = max(amountOfNodes, amountOfEdges);
 
-    struct graph *g = malloc(sizeof(struct graph));
-    g->nodes        = malloc(sizeof(struct node *) * amountOfNodes);
+    struct graph *g = create_graph(amountOfNodes);
     g->length       = amountOfNodes;
     
     // Create the nodes
@@ -140,47 +192,6 @@ struct graph *initialize_graph() {
     return g;
 }
 
-/**
-* Divide a graph into multiple subgraphs.
-* 
-* Dividing the graph into subgraphs allows multicore processes to each
-* claim their own segment of the graph. This function determines how
-* the nodes are distributed, so rewrite this function if you wish to
-* alter the way the nodes are distributed.
-*
-* Parameters:
-* - `g`         Graph structure that needs to be divided
-* - `processes` Amount of subgraphs that need to be created
-*
-* Returns:      Pointer to an array of pointers to the newly created subgraphs
-*/
-struct graph **divide_graph(struct graph *g, uint processes) {
-    struct graph **subs = malloc(processes * sizeof(struct graph *));
-
-    for (uint i=0; i<processes; i++) {
-        printf("Initializing graph %u...\n", i);
-        subs[i] = malloc(sizeof(struct graph));
-        subs[i]->length = 0;
-
-        // Maximum amount of nodes per subgraph
-        // If unsure, type the following:
-        // subs[i]->nodes = malloc(g->length * sizeof(struct node *));
-        subs[i]->nodes = malloc((g->length/processes+1) * sizeof(struct node *));
-        printf("Subgraph %u can take up to %u nodes.\n", i, (g->length/processes+1));
-    }
-
-    for (uint i=0; i<g->length; i++) {
-        uint nodeDistribution  = cyclic_distribution(i, g->length, processes);
-
-        printf("Assigning node %u to subgraph %u...\n", i, nodeDistribution);
-        struct graph *appointee = subs[nodeDistribution];
-
-        appointee->nodes[appointee->length] = g->nodes[i];
-        appointee->length++;
-    }
-
-    return subs;
-}
 
 /**
 * Print a graph's representation to stdout.

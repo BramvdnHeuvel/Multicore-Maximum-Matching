@@ -44,6 +44,32 @@ struct graph;
 struct node *create_node(uint n, uint maxDegree);
 
 /**
+* Create a new graph structure with default settings.
+*
+* Parameters:
+* - `maxNodes`      The maximum amount of nodes you're expecting the graph
+                        to contain.
+*
+* Returns:          Pointer to the newly created graph.
+*/
+struct graph *create_graph(uint maxNodes);
+
+/**
+* Create multiple (sub)graphs.
+*
+* This function is generally used to split a graph up into multiple
+* subgraphs so that the graph can be distributed across processes
+* without any overlap of nodes.
+*
+* Parameters:
+* - `n`                 Amount of (sub)graphs to create
+* - `maxNodesPerGraph`  Maximum amount of nodes each graph may contain
+*
+* Returns:              Pointer to an array of pointers to graphs
+*/
+struct graph **create_subgraphs(uint n, uint maxNodesPerGraph);
+
+/**
 * Connect two nodes to each other. The operation is symmetrical, 
 * so the order of the two nodes does not matter.
 *
@@ -52,6 +78,15 @@ struct node *create_node(uint n, uint maxDegree);
 * - `b`             Node structure 2
 */
 void connect_nodes(struct node *a, struct node *b);
+
+/**
+* Add an existing node to a (sub)graph.
+*
+* Parameters:
+* - `n`         Node to add.
+* - `g`         Graph to add the node to.
+*/
+void add_to_graph(struct node *n, struct graph *g);
 
 /**
 * Create a new graph structure based on stdin.
@@ -82,22 +117,6 @@ void connect_nodes(struct node *a, struct node *b);
 * Returns:          Pointer to the newly created graph
 */
 struct graph *initialize_graph();
-
-/**
-* Divide a graph into multiple subgraphs.
-* 
-* Dividing the graph into subgraphs allows multicore processes to each
-* claim their own segment of the graph. This function determines how
-* the nodes are distributed, so rewrite this function if you wish to
-* alter the way the nodes are distributed.
-*
-* Parameters:
-* - `g`         Graph structure that needs to be divided
-* - `processes` Amount of subgraphs that need to be created
-*
-* Returns:      Pointer to an array of pointers to the newly created subgraphs
-*/
-struct graph **divide_graph(struct graph *g, uint processes);
 
 /**
 * Print a graph's representation to stdout.

@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "divider.c"
 #include "graph.c"
 #include "snake.c"
 #include "utilities.c"
@@ -55,7 +56,12 @@ int main(int argc, char** argv) {
 
 
     // Create a subgraph for each process
-    subgraphs = divide_graph(g, AMOUNT_OF_CORES);
+    subgraphs = divide_graph_path(g, AMOUNT_OF_CORES);
+
+    // Display the subgraphs
+    for (uint i=0; i<AMOUNT_OF_CORES; i++) {
+        show_graph(subgraphs[i]);
+    }
 
 
     // Start the process
