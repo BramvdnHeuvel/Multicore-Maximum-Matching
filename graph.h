@@ -6,6 +6,9 @@
 #include "snake.h"
 #include "utilities.h"
 
+#ifndef GRAPH_STRUCTURES
+#define GRAPH_STRUCTURES 
+
 /**
 * Vertex structure in a (sub)graph.
 *
@@ -20,7 +23,20 @@
 * - `tail`          Boolean whether the node is a tail that can be bitten.
 * - `eaten_by`      Pointer to the local snake that this node is part of.
 */
-struct node;
+struct node {
+    uint value;         // Node identifier
+
+    // Which nodes are we connected to?
+    uint *connectedTo;  // Which ones?
+    uint  connections;  // How many?
+
+    // Snake operations
+    bool eaten;         // Whether the node has been eaten by a snake
+    bool head;          // Whether the node is a head /\_ 
+    bool tail;          // Whether the node is a tail [] 
+    struct snake *eaten_by; // Snake that the node is part of
+};
+
 
 /**
 * Graph structure to contain a collection of nodes
@@ -30,7 +46,11 @@ struct node;
                         of the graph.
 * - `length`        Array length of the `nodes` attribute.
 */
-struct graph;
+struct graph {
+    struct node **nodes;
+    int length;
+};
+#endif
 
 /**
 * Create a new node structure with default settings.

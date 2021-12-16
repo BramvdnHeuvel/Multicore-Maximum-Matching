@@ -1,45 +1,5 @@
 #include "graph.h"
 
-/**
-* Vertex structure in a (sub)graph.
-*
-* Attributes:
-* - `value`         A unique identifier that distinguishes the node.
-* - `connectedTo`   An array of integers that are identifiers to the nodes that
-*                       this node is connected to.
-* - `connections`   Array length of the `connectedTo` attribute.
-* - `eaten`         Boolean whether the node has been eaten by a snake yet.
-* - `head`          Boolean whether the node is the head of a snake looking for
-                        a tail to bite on.
-* - `tail`          Boolean whether the node is a tail that can be bitten.
-* - `eaten_by`      Pointer to the local snake that this node is part of.
-*/
-struct node {
-    uint value;         // Node identifier
-
-    // Which nodes are we connected to?
-    uint *connectedTo;  // Which ones?
-    uint  connections;  // How many?
-
-    // Snake operations
-    bool eaten;         // Whether the node has been eaten by a snake
-    bool head;          // Whether the node is a head /\_ 
-    bool tail;          // Whether the node is a tail [] 
-    struct snake *eaten_by; // Snake that the node is part of
-};
-
-/**
-* Graph structure to contain a collection of nodes
-*
-* Attributes:
-* - `nodes`         Array of pointers to node structures that are part
-                        of the graph.
-* - `length`        Array length of the `nodes` attribute.
-*/
-struct graph {
-    struct node **nodes;
-    int length;
-};
 
 /**
 * Create a new node structure with default settings.
