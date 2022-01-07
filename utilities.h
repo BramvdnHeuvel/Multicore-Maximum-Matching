@@ -1,5 +1,10 @@
 #include <bsp.h>
 
+struct instruction;
+struct neighbour;
+struct node;
+struct snake;
+
 typedef unsigned int uint;
 
 /**

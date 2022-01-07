@@ -3,8 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "snake.h"
 #include "utilities.h"
+#include "snake.h"
 
 #ifndef GRAPH_STRUCTURES
 #define GRAPH_STRUCTURES 
