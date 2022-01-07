@@ -124,6 +124,26 @@ struct graph *deepcopy_graph(struct graph *g);
 struct node *deepcopy_node(struct node *n);
 
 /**
+ * Unallocate a graph to free memory.
+ *
+ * The function also unallocates any nodes that are in the graph.
+ *
+ * Parameters:
+ * - `g`        Graph that is freed from memory.
+ */
+void unallocate_graph(struct graph *g);
+
+/**
+ * Unallocate a node to free memory.
+ *
+ * The function also unallocates any nodes that are in the node.
+ *
+ * Parameters:
+ * - `n`        Node that is freed from memory.
+ */
+void unallocate_node(struct node *n);
+
+/**
 * Connect two nodes to each other. The operation is symmetrical, 
 * so the order of the two nodes does not matter.
 *

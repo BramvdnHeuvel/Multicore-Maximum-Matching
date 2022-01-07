@@ -1,5 +1,6 @@
 #include "divider.h"
 
+
 /**
 * Distribute a graph into subgraphs through cyclic distribution.
 *
@@ -49,7 +50,6 @@ struct graph **divide_graph_path(struct graph *g, uint processes) {
     for (uint i=0; i<g->length; i++) {
         while (!used[i]) {
             add_to_graph(g->nodes[i], subs[p]);
-            printf("Added node %u to subgraph %u\n", i, p);
             used[i] = true;
 
             for (uint j=0; j<g->nodes[i]->connections; j++) {

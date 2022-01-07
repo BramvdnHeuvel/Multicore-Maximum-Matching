@@ -26,11 +26,9 @@ void spmd() {
     ************************************/
 
     struct graph *g = subgraphs[bsp_pid()];
+    g = deepcopy_graph(g);
 
-    for (uint i=0; i<g->length; i++) {
-        // printf("PID %u -> Node %u\n", bsp_pid(), g->nodes[i]->value);
-        // printf("PID %u present!\n", bsp_pid());
-    }
+    unallocate_graph(g);
 
 
     /***********************************

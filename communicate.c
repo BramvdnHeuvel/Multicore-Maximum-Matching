@@ -72,7 +72,9 @@ void inspect_snake_numbers(uint *snake_numbers) {
  *              during a synchronisation phase.
  */
 struct instruction *get_instruction_channel(uint *snakes_count) {
-    return malloc(sum(snakes_count) * sizeof(struct instruction *));
+    return malloc(
+        sum(snakes_count, bsp_nprocs()) * sizeof(struct instruction *)
+    );
 }
 
 /**

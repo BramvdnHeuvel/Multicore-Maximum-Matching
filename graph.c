@@ -84,7 +84,6 @@ struct graph **create_subgraphs(uint n, uint maxNodesPerGraph) {
  */
 struct graph *deepcopy_graph(struct graph *g) {
     struct graph *new_g = create_graph(g->length);
-    new_g->nodes        = malloc(g->length * sizeof(struct node *));
 
     for (uint i=0; i<g->length; i++) {
         new_g->nodes[i] = deepcopy_node(g->nodes[i]);
@@ -118,6 +117,36 @@ struct node *deepcopy_node(struct node *n) {
     for (uint i=0; i<n->connections; i++) {
         new->connectedTo[i] = n->connectedTo[i];
     }
+}
+
+/**
+ * Unallocate a graph to free memory.
+ *
+ * The function also unallocates any nodes that are in the graph.
+ *
+ * Parameters:
+ * - `g`        Graph that is freed from memory.
+ */
+void unallocate_graph(struct graph *g) {
+    for (uint i=0; i<g->length; i++) {
+        unallocate_node(g->nodes[i]);
+    }
+
+    free(g->nodes);
+    free(g);
+}
+
+/**
+ * Unallocate a node to free memory.
+ *
+ * The function also unallocates any nodes that are in the node.
+ *
+ * Parameters:
+ * - `n`        Node that is freed from memory.
+ */
+void unallocate_node(struct node *n) {
+    free(n->connectedTo);
+    free(n);
 }
 
 /**
