@@ -68,6 +68,59 @@ struct graph **create_subgraphs(uint n, uint maxNodesPerGraph) {
 }
 
 /**
+ * Deepcopy a graph. 
+ *
+ * If you are unsure whether the processes are waiting for each other to
+ * read data outside of their SPMDs, you can create a copy of a graph
+ * with this function.
+ *
+ * This way, all relevant data for a process remains within its thread.
+ *
+ * Parameters:
+ * - `g`        A graph structure that needs to be copied
+ *
+ * Returns:     An exact replica of graph `g`, yet all pointers point to
+ *                  newly allocated memory.
+ */
+struct graph *deepcopy_graph(struct graph *g) {
+    struct graph *new_g = create_graph(g->length);
+    new_g->nodes        = malloc(g->length * sizeof(struct node *));
+
+    for (uint i=0; i<g->length; i++) {
+        new_g->nodes[i] = deepcopy_node(g->nodes[i]);
+    }
+}
+
+/**
+ * Deepcopy a node. 
+ *
+ * If you are unsure whether the processes are waiting for each other to
+ * read data outside of their SPMDs, you can create a copy of a node
+ * with this function.
+ *
+ * This way, all relevant data for a process remains within its thread.
+ *
+ * Parameters:
+ * - `n`        A node structure that needs to be copied
+ *
+ * Returns:     An exact replica of node `n`, yet all pointers point to
+ *                  newly allocated memory.
+ */
+struct node *deepcopy_node(struct node *n) {
+    struct node *new = create_node(n->value, n->connections);
+
+    new->value          = n->value;
+    new->connections    = n->connections;
+    new->eaten          = n->eaten;
+    new->head           = n->head;
+    new->tail           = n->tail;
+
+    for (uint i=0; i<n->connections; i++) {
+        new->connectedTo[i] = n->connectedTo[i];
+    }
+}
+
+/**
 * Connect two nodes to each other. The operation is symmetrical, 
 * so the order of the two nodes does not matter.
 *

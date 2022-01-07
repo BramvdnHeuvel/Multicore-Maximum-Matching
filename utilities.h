@@ -13,6 +13,15 @@ typedef unsigned int uint;
 uint max(uint a, uint b);
 
 /**
+ * Calculate the sum of an array of numbers.
+ *
+ * Parameters:
+ * - `nums`     Pointer to the array of numbers.
+ * - `n`        Length of the array.
+ */
+uint sum(uint *nums, uint n);
+
+/**
 * Distribute nodes across processes in a block distribution.
 *
 *  1 2 3 4 5 6 7 8 9

@@ -19,19 +19,26 @@ void spmd() {
     bsp_begin(AMOUNT_OF_CORES);
     
     /***********************************
-    *****   INITIALIZATION PHASE   *****
+    *       INITIALIZATION PHASE       *
+    ************************************
+    *  Load the data that was created  *
+    *  for us during initialization.   *
     ************************************/
 
-
     struct graph *g = subgraphs[bsp_pid()];
+
+    for (uint i=0; i<g->length; i++) {
+        // printf("PID %u -> Node %u\n", bsp_pid(), g->nodes[i]->value);
+        // printf("PID %u present!\n", bsp_pid());
+    }
 
 
     /***********************************
     *********   SUPERSTEP 1    *********
     ************************************/
 
-    uint *nums = get_snake_numbers(bsp_pid());
-    inspect_snake_numbers(nums);
+    uint *snake_nums = get_snake_numbers(bsp_pid());
+    inspect_snake_numbers(snake_nums);
     
     bsp_end();
 }
@@ -58,7 +65,7 @@ int main(int argc, char** argv) {
 
 
     // Create a subgraph for each process
-    subgraphs = divide_graph_path(g, AMOUNT_OF_CORES);
+    subgraphs = divide_graph_cyclic(g, AMOUNT_OF_CORES);
 
     // Display the subgraphs
     for (uint i=0; i<AMOUNT_OF_CORES; i++) {
