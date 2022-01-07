@@ -11,6 +11,23 @@ uint max(uint a, uint b) {
 }
 
 /**
+ * Calculate the sum of an array of numbers.
+ *
+ * Parameters:
+ * - `nums`     Pointer to the array of numbers.
+ * - `n`        Length of the array.
+ */
+uint sum(uint *nums, uint n) {
+    uint total = 0;
+
+    for (uint i=0; i<n; i++) {
+        total = total + nums[i];
+    }
+
+    return total;
+}
+
+/**
 * Distribute nodes across processes in a block distribution.
 *
 *  1 2 3 4 5 6 7 8 9

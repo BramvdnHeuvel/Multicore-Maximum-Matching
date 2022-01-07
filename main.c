@@ -1,7 +1,9 @@
 #include <bsp.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
+#include "communicate.c"
 #include "divider.c"
 #include "graph.c"
 #include "snake.c"
@@ -28,8 +30,8 @@ void spmd() {
     *********   SUPERSTEP 1    *********
     ************************************/
 
-
-
+    uint *nums = get_snake_numbers(bsp_pid());
+    inspect_snake_numbers(nums);
     
     bsp_end();
 }

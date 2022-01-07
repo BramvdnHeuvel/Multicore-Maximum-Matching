@@ -46,6 +46,40 @@ struct neighbour {
 #endif
 
 /**
+ * Determine how many snakes each process needs. This amount is equivalent
+ * to how many instructions a process can theoretically broadcast per round.
+ *
+ * Parameters:
+ * - `snakes_here`  Amount of snakes in our process.
+ *
+ * Returns:         Array of how many snakes each process has. 
+ */
+uint *get_snake_numbers(uint snakes_here);
+
+/**
+ * Debugging function: take a look at how many snakes each process has created.
+ * The result is printed to stdout.
+ *
+ * Parameters:
+ * - `snake_numbers`    The list of snake numbers that the process received.
+ */
+void inspect_snake_numbers(uint *snake_numbers);
+
+/**
+ * Initialize an instruction channel.
+ *
+ * In this channel, processes can exchange instructions in all-to-all
+ * communication to coordinate the flow of snakes through the graph.
+ *
+ * Parameters:
+ * - `snakes`   Amount of snakes in our process.
+ *
+ * Returns:     Array of instructions that other processes can alter
+ *              during a synchronisation phase.
+ */
+struct instruction *get_instruction_channel(uint *snakes_count);
+
+/**
  * Create a new instruction for the entire graph to alter.
  *
  * Parameters:

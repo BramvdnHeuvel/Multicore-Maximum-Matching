@@ -1,6 +1,81 @@
 #include "communicate.h"
 
 /**
+ * Determine how many snakes each process needs. This amount is equivalent
+ * to how many instructions a process can theoretically broadcast per round.
+ *
+ * Parameters:
+ * - `snakes_here`  Amount of snakes in our process.
+ *
+ * Returns:         Array of how many snakes each process has. 
+ */
+uint *get_snake_numbers(uint snakes_here) {
+    uint channels = bsp_nprocs();
+
+    // Register snake numbers
+    uint *snake_numbers = malloc(channels * sizeof(uint));
+
+    bsp_push_reg( snake_numbers, channels * sizeof(uint));
+    bsp_sync();
+
+    // Insert value for all processes
+    for (uint i=0; i<channels; i++) {
+        bsp_put(i, &snakes_here, snake_numbers, bsp_pid() * sizeof(uint), sizeof(uint));
+    }
+
+    bsp_sync();
+
+    // Return the fixed snake numbers
+    return snake_numbers;
+}
+
+/**
+ * Debugging function: take a look at how many snakes each process has created.
+ * The result is printed to stdout.
+ *
+ * Parameters:
+ * - `snake_numbers`    The list of snake numbers that the process received.
+ */
+void inspect_snake_numbers(uint *snake_numbers) {
+    uint p = bsp_pid();
+    uint n = bsp_nprocs();
+
+    for (uint i=0; i<n; i++) {
+        if (i == p) {
+            printf("PID %u has these numbers: %u", p, snake_numbers[0]);
+            
+            for (uint j=1; j<n; j++) {
+                printf(", %u", snake_numbers[j]);
+            }
+
+            printf("\n");
+        }
+        bsp_sync();
+    }
+
+    if (p == 0) {
+        printf("Those numbers should be the same for all processes.\n");
+    }
+    bsp_sync();
+}
+
+/**
+ * Initialize an instruction channel.
+ *
+ * In this channel, processes can exchange instructions in all-to-all
+ * communication to coordinate the flow of snakes through the graph.
+ *
+ * Parameters:
+ * - `snakes`   Amount of snakes in our process.
+ *
+ * Returns:     Array of instructions that other processes can alter
+ *              during a synchronisation phase.
+ */
+struct instruction *get_instruction_channel(uint *snakes_count) {
+    return malloc(sum(snakes_count) * sizeof(struct instruction *));
+}
+
+/**
  * Create a new instruction for the entire graph to alter.
  *
  * Parameters:
