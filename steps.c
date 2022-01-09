@@ -75,6 +75,22 @@ void broadcast_node_amount(nid_int total_nodes, nid_int *sync_number) {
 }
 
 /**
+ * Broadcast the total amount of numbers that the graph has.
+ *
+ * Parameters:
+ * - `sync_number`  The pushed BSP register where the number may be stored.
+ *                  This value is expected to store the value already in the
+ *                  process where you're executing this function.
+ */
+void broadcast_total_node_amount(nid_int *sync_number) {
+    uint n = bsp_nprocs();
+
+    for (uint i=0; i<n; i++) {
+        bsp_put(i, sync_number, sync_number, 0, sizeof(nid_int));
+    }
+}
+
+/**
  * Broadcast to each process how many edges they should expect.
  *
  * This functions helps gain an accurate estimate about how much memory should
@@ -156,4 +172,73 @@ void send_edges(nid_int (*edges)[2], nid_int total_edges,
     }
 
     free(edges_found);
+}
+
+/**
+ * Calculate the maximum amount of nodes that may be expected in the process
+ * based on the edges we have available.
+ *
+ * This number may differ from the amount of nodes that is initially given to
+ * the process. It may be lower as the process ignores vertices of degree 0.
+ * (Such vertices by definition do not match.) It may also be higher as the
+ * process receives vertices of degree 1 from other processes if their only
+ * neighbour is in the concerning the process.
+ *
+ * Parameters:
+ * - `edges`        Array that stores every edge in the graph.
+ * - `local_nodes`  How many nodes this process has.
+ * - `local_edges`  How many edges this process has.
+ * - `total_nodes`  How many nodes the graph has in total.
+ */
+nid_int calculate_maximum_nodes_in_process(nid_int (*edges)[2], 
+                                           nid_int local_nodes, 
+                                           nid_int local_edges, 
+                                           nid_int total_nodes) {
+    uint n = bsp_nprocs();
+    uint p = bsp_pid();
+
+    nid_int *neighbours = malloc(local_edges * sizeof(nid_int));
+    nid_int neighbours_length = 0;
+
+    for (nid_int i=0; i<local_edges; i++) {
+        nid_int node_one = edges[i][0];
+        nid_int node_two = edges[i][1];
+
+        uint p1 = divide(node_one, total_nodes, n);
+        uint p2 = divide(node_two, total_nodes, n);
+        
+        if (p1 != p) {
+            bool already_exists = false;
+
+            for (nid_int j=0; j<neighbours_length; j++) {
+                if (neighbours[j] == node_one) {
+                    already_exists = true;
+                    break;
+                }
+            }
+
+            if (!already_exists) {
+                neighbours[neighbours_length] = node_one;
+                neighbours_length++;
+            }
+        }
+        if (p2 != p) {
+            bool already_exists = false;
+
+            for (nid_int j=0; j<neighbours_length; j++) {
+                if (neighbours[j] == node_two) {
+                    already_exists = true;
+                    break;
+                }
+            }
+
+            if (!already_exists) {
+                neighbours[neighbours_length] = node_two;
+                neighbours_length++;
+            }
+        }
+    }
+
+    free(neighbours);
+    return neighbours_length + local_nodes;
 }

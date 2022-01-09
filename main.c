@@ -1,6 +1,7 @@
 #include <bsp.h>
-#include <stdlib.h>
+#include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "structures.h"
@@ -38,6 +39,7 @@ void spmd() {
     
     nid_int amountOfNodes;
     nid_int amountOfEdges;
+    bsp_push_reg(&amountOfNodes, sizeof(nid_int));
 
     bsp_sync();
 
@@ -52,6 +54,8 @@ void spmd() {
         prompt_graph_size(&amountOfNodes, &amountOfEdges);
 
         broadcast_node_amount(amountOfNodes, &nodes_in_pid);
+
+        broadcast_total_node_amount(&amountOfNodes);
 
     }
     bsp_sync();
@@ -102,6 +106,24 @@ void spmd() {
     //     }
     //     bsp_sync();
     // }
+
+    // Step d)
+    //
+    // Set up the structure in the process. No communication is required here.
+
+    nid_int maximum_nodes = calculate_maximum_nodes_in_process(local_edges,
+                            nodes_in_pid, edges_in_pid, amountOfNodes);
+
+    struct node **nodes = malloc(maximum_nodes * sizeof(struct node *));
+
+    // DEBUG: Check the theoretical limit that each node may receive.
+    for (uint i=0; i<n; i++) {
+        if (i == p) {
+            printf("In theory, PID %u process can receive up to %u nodes.\n", p, maximum_nodes);
+        }
+        bsp_sync();
+    }
+
 
     bsp_sync();
 
