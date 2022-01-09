@@ -1,14 +1,35 @@
+/**
+ * Ask for the graph's size on stdin.
+ *
+ * Parameters:
+ * - `nodes`    Integer that will store the amount of vertices in the graph.
+ * - `edges`    Integer that will store the amount of edges in the graph.
+ */
 void prompt_graph_size(nid_int *nodes, nid_int *edges) {
     printf("Let's initialize the graph! Give me the graph data, please.\n");
     fflush(stdout);
     scanf("%u %u", nodes, edges);
 }
 
+/**
+ * Ask for an edge on stdin.
+ *
+ * Parameters:
+ * - `node_one` Integer that will store the first node.
+ * - `node_two` Integer that will store the second node.
+ */
 void prompt_edge(nid_int *node_one, nid_int *node_two) {
     fflush(stdout);
     scanf("%u %u", node_one, node_two);
 }
 
+/**
+ * Ask for all edges in the graph.
+ *
+ * Parameters:
+ * - `edges`        Array that will store all the edges.
+ * - `total_edges`  How many edges are expected.
+ */
 void prompt_edges(nid_int (*edges)[2], nid_int total_edges) {
     for (nid_int i=0; i<total_edges; i++) {
         nid_int node_one;
@@ -21,7 +42,17 @@ void prompt_edges(nid_int (*edges)[2], nid_int total_edges) {
     }
 }
 
-void *broadcast_node_amount(nid_int total_nodes, nid_int *sync_number) {
+/**
+ * Broadcast to each process how many nodes they should expect.
+ *
+ * This functions helps gain an accurate estimate about how much memory should
+ * be allocated by each process.
+ *
+ * Parameters:
+ * - `total_nodes`  How many nodes the graph has in total.
+ * - `sync_number`  The pushed BSP register where each number may be stored.
+ */
+void broadcast_node_amount(nid_int total_nodes, nid_int *sync_number) {
     uint n = bsp_nprocs();
 
     // Initialize table
@@ -43,6 +74,18 @@ void *broadcast_node_amount(nid_int total_nodes, nid_int *sync_number) {
     free(node_distr);
 }
 
+/**
+ * Broadcast to each process how many edges they should expect.
+ *
+ * This functions helps gain an accurate estimate about how much memory should
+ * be allocated by each process.
+ *
+ * Parameters:
+ * - `edges`        Array that stores every edge in the graph.
+ * - `total_edges`  How many edges the graph has in total.
+ * - `total_nodes`  How many nodes the graph has in total.
+ * - `sync_number`  The pushed BSP register where each number may be stored.
+ */
 void broadcast_edge_amount(nid_int (*edges)[2], nid_int total_edges,
                            nid_int total_nodes, nid_int *sync_number) {
     uint n = bsp_nprocs();
@@ -75,6 +118,15 @@ void broadcast_edge_amount(nid_int (*edges)[2], nid_int total_edges,
     free(edge_distr);
 }
 
+/**
+ * Broadcast all edges to the relevant processes.
+ *
+ * Parameters:
+ * - `edges`        Array that stores every edge in the graph.
+ * - `total_edges`  How many edges the graph has in total.
+ * - `total_nodes`  How many nodes the graph has in total.
+ * - `sync_number`  The pushed BSP register where every edge may be stored.
+ */
 void send_edges(nid_int (*edges)[2], nid_int total_edges, 
                 nid_int total_nodes, nid_int (*sync_array)[2]) {
     uint n = bsp_nprocs();
