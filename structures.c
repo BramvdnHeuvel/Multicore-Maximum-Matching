@@ -4,9 +4,9 @@
 *
 * Attributes:
 * - `value`         A unique identifier that distinguishes the node.
-* - `connectedTo`   An array of integers that are identifiers to the nodes that
+* - `connections`   An array of integers that are identifiers to the nodes that
 *                       this node is connected to.
-* - `connections`   Array length of the `connectedTo` attribute.
+* - `degree`        Array length of the `connections` attribute.
 * - `eaten`         Boolean whether the node has been eaten by a snake yet.
 * - `head`          Boolean whether the node is the head of a snake looking for
                         a tail to bite on.
@@ -17,8 +17,8 @@ struct node {
     nid_int value;          // Node identifier
 
     // Which nodes are we connected to?
-    nid_int *connectedTo;   // Which ones?
-    nid_int  connections;   // How many?
+    nid_int *connections;   // Which ones?
+    nid_int  degree;   // How many?
 
     // Snake operations
     bool eaten;         // Whether the node has been eaten by a snake
@@ -52,3 +52,51 @@ struct snake {
 
     nid_int base;
 };
+
+
+
+struct node *create_node(nid_int value, nid_int *endpoints,
+                         nid_int edges_length) {
+    struct node *nd = malloc(sizeof(struct node));
+
+    nd->value = value; nd->degree = edges_length;
+    nd->eaten = false; nd->head = false; nd->tail = false;
+    nd->eaten_by = NULL;
+
+    nd->connections = malloc(edges_length * sizeof(nid_int));
+
+    for (nid_int i=0; i<edges_length; i++) {
+        nd->connections[i] = endpoints[i];
+    }
+
+    return nd;
+}
+
+void remove_edge(struct node *nd, nid_int e) {
+    nid_int i;
+
+    for (i=0; i<nd->degree; i++) {
+        if (nd->connections[i] == e) {
+            break;
+        }
+    }
+
+    for (; i<nd->degree-1; i++) {
+        nd->connections[i] = nd->connections[i+1];
+    }
+
+    nd->degree--;
+}
+
+void unallocate_node(struct node *nd) {
+    free(nd->connections);
+    free(nd);
+}
+
+void show_node(struct node *nd) {
+    printf("[ Node\n    value       -> %u\n    degree      -> %u\n    connections -> [ ", nd->value, nd->degree);
+    for (nid_int i=0; i<nd->degree; i++) {
+        printf("%u ", nd->connections[i]);
+    }
+    printf("]\n]\n");
+}

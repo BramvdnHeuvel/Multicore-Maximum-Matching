@@ -7,10 +7,14 @@
 #include "structures.h"
 
 #include "divide.h"
+#include "instructions.h"
 #include "utilities.h"
 
+#include "structures.c"
+
 #include "divide.c"
-#include "steps.c"
+#include "instructions.c"
+//#include "steps.c"
 #include "utilities.c"
 
 
@@ -94,6 +98,7 @@ void spmd() {
     // Send the appropriate edges to the right processes
     if (p == 0) {
         send_edges(edges, amountOfEdges, amountOfNodes, local_edges);
+        free(edges);
     }
     bsp_sync();
 
@@ -114,31 +119,69 @@ void spmd() {
     nid_int maximum_nodes = calculate_maximum_nodes_in_process(local_edges,
                             nodes_in_pid, edges_in_pid, amountOfNodes);
 
+    // // DEBUG: Check the theoretical limit that each node may receive.
+    // for (uint i=0; i<n; i++) {
+    //     if (i == p) {
+    //         printf("In theory, PID %u process can receive up to %u nodes.\n", p, maximum_nodes);
+    //     }
+    //     bsp_sync();
+    // }
+
+    // Create the node structures
     struct node **nodes = malloc(maximum_nodes * sizeof(struct node *));
+    nodes_in_pid = 0;
+    initialize_nodes(      nodes, &nodes_in_pid, 
+                     local_edges,  edges_in_pid, amountOfNodes);
 
-    // DEBUG: Check the theoretical limit that each node may receive.
-    for (uint i=0; i<n; i++) {
-        if (i == p) {
-            printf("In theory, PID %u process can receive up to %u nodes.\n", p, maximum_nodes);
-        }
-        bsp_sync();
-    }
+    // // DEBUG: Check if the nodes have initialised successfully.
+    // for (uint i=0; i<n; i++) {
+    //     if (i == p) {
+    //         printf("PID %u: %u nodes found\n", p, nodes_in_pid);
+    //         // for (nid_int j=0; j<nodes_in_pid; j++) {
+    //         //     show_node(nodes[j]);
+    //         // }
+    //     }
+    //     bsp_sync();
+    // }
 
-
+    free(local_edges);
     bsp_sync();
 
 
-    /***********************************
-    *********   SUPERSTEP 1    *********
-    ************************************/
+    nid_int (*matches)[2] = malloc((maximum_nodes)/2 * 2 * sizeof(nid_int));
+    nid_int matches_found = 0;
 
-    // uint *snake_nums = get_snake_numbers(bsp_pid());
-    // inspect_snake_numbers(snake_nums);
+
+    /***********************************
+    *           SUPERSTEP 1            *
+    ************************************
+    * Get rid of all nodes of degree 1 *
+    ************************************/
     
-    free(local_edges);
-    if (p == 0) {
-        free(edges);
+    struct todo_list *todo;
+    struct instruction *response;
+
+    while (true) {
+        todo = get_todo_list();
+
+
+
+        response = send_instructions(todo);
+
+        // DEBUG: Check which responses were received
+        debug_instruction_response(response);
+
+        // Continue to the next phase when communication has stopped.
+        if (todo->expected_responses == 0) {
+            break;
+        }
+
+        // Clean up memory
+        unallocate_todo_list(todo);
+        free(response);
     }
+
+
     bsp_end();
 }
 
@@ -146,6 +189,7 @@ void spmd() {
 * Setup function
 */
 int main(int argc, char** argv) {
+    unsigned int j = 0;
     
     // Set up the processes
     printf("How many processes would you like to use? There are %u cores available.\n", bsp_nprocs());

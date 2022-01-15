@@ -42,3 +42,14 @@ struct node;
  * - `base`          Unique node identifier of the global snake's tail.
  */
 struct snake;
+
+struct instruction;
+
+struct node *create_node(nid_int value, nid_int *endpoints,
+                         nid_int edges_length);
+
+void remove_edge(struct node *nd, nid_int e);
+
+void unallocate_node(struct node *nd);
+
+void show_node(struct node *nd);
