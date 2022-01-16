@@ -1,3 +1,5 @@
+#include "utilities.h"
+
 /**
  * Exchange with other processes how many instructions they're supposed to
  * expect.
@@ -26,6 +28,31 @@ nid_int max(nid_int *nums, uint n) {
     }
 
     return maximum;
+}
+
+nid_int unique(nid_int *nums, nid_int n) {
+    nid_int *unique_values = malloc(n * sizeof(nid_int));
+    nid_int unique_length  = 0;
+
+    for (nid_int i=0; i<n; i++) {
+        nid_int value = nums[i];
+        bool seen_before = false;
+
+        for (nid_int j=0; j<unique_length; j++) {
+            if (unique_values[j] == value) {
+                seen_before = true;
+                break;
+            }
+        }
+
+        if (!seen_before) {
+            unique_values[unique_length] = value;
+            unique_length++;
+        }
+    }
+
+    free(unique_values);
+    return unique_length;
 }
 
 nid_int sum(nid_int *nums, uint n) {

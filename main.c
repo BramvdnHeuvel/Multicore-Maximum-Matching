@@ -4,22 +4,32 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "structures.h"
+// uint
+//
+// This value should be at least as large as:
+// - the number of PIDs.
+typedef unsigned int uint;
 
-#include "divide.h"
-#include "instructions.h"
-#include "utilities.h"
+// nid_int
+//
+// This value should be at least as large as:
+// - the number of nodes    in the input graph;
+// - the number of vertices in the input graph.
+//
+// NOTE: Make sure that you also update the scanf function that looks for
+// these values and casts them into variables.
+typedef unsigned int nid_int;
 
-#include "structures.c"
-
+#include "debug.c"
 #include "divide.c"
+#include "graph.c"
 #include "instructions.c"
-//#include "steps.c"
+#include "match.c"
+#include "steps.c"
 #include "utilities.c"
 
 
 static unsigned int AMOUNT_OF_CORES;
-static struct graph **subgraphs;
 
 /**
 * Function that runs synchronously on multiple cores.
@@ -36,63 +46,62 @@ void spmd() {
     uint n = bsp_nprocs();
     uint p = bsp_pid();
 
-    nid_int       nodes_in_pid;
-    bsp_push_reg(&nodes_in_pid, sizeof(nid_int));
-    nid_int       edges_in_pid;
-    bsp_push_reg(&edges_in_pid, sizeof(nid_int));
+    nid_int edges_in_pid;   // Amount of edges in this process
     
-    nid_int amountOfNodes;
-    nid_int amountOfEdges;
+    nid_int amountOfNodes;  // Amount of vertices in the graph
+    nid_int amountOfEdges;  // Amount of edges in the graph
+
+    bsp_push_reg(&edges_in_pid,  sizeof(nid_int));
     bsp_push_reg(&amountOfNodes, sizeof(nid_int));
 
     bsp_sync();
 
-    // Step a)
-    //
-    // Prompt how many vertices and edges the graph has,
-    // and tell each process how many vertices to expect.
-    nid_int *node_distr;
 
+
+    /* Step a)
+    **
+    ** Prompt how many vertices and edges the graph has,
+    ** and tell each process how many vertices to expect.
+    */
     if (p == 0) {
-
         prompt_graph_size(&amountOfNodes, &amountOfEdges);
 
-        broadcast_node_amount(amountOfNodes, &nodes_in_pid);
-
         broadcast_total_node_amount(&amountOfNodes);
-
     }
     bsp_sync();
 
-    // Step b)
-    //
-    // Prompt all the edges between vertices. Temporarily store them
-    // and calculate how many edges each process may expect.
+
+
+    /* Step b)
+    **
+    ** Prompt all the edges between vertices. Temporarily store them
+    ** and calculate how many edges each process may expect.
+    */
     nid_int (*edges)[2];
 
     if (p == 0) {
         edges = malloc(amountOfEdges * 2 * sizeof(nid_int));
+        
         prompt_edges(edges, amountOfEdges);
-        broadcast_edge_amount(edges, amountOfEdges, amountOfNodes, &edges_in_pid);
+        broadcast_edge_amount(edges, amountOfEdges, amountOfNodes, 
+                              &edges_in_pid);
     }
     bsp_sync();
 
-    // Step c)
-    //
-    // Prepare to receive the edges.
+    // DEBUG
+    // Check that every PID expects the right amount of edges.
+    debug_expected_amount_of_edges(edges_in_pid);
 
-    // // DEBUG: See whether all PIDs got the right amount of vertices and edges.
-    // for (uint i=0; i<n; i++) {
-    //     if (i == p) {
-    //         printf("PID %u is expecting %u nodes and %u edges in total.\n", 
-    //                 p, nodes_in_pid, edges_in_pid);
-    //     }
-    //     bsp_sync();
-    // }
 
-    // Make room for the given amount of edges
-    nid_int (*local_edges)[2] = malloc(edges_in_pid * 2 * sizeof(nid_int));
-    bsp_push_reg(local_edges, edges_in_pid * 2 * sizeof(nid_int));
+
+    /* Step c)
+    **
+    ** Prepare to receive the edges.
+    */
+
+    // Set up the edge array
+    nid_int (*local_edges)[2] = malloc(2 * edges_in_pid * sizeof(nid_int));
+    bsp_push_reg(local_edges, 2 * edges_in_pid * sizeof(nid_int));
     bsp_sync();
 
     // Send the appropriate edges to the right processes
@@ -102,58 +111,35 @@ void spmd() {
     }
     bsp_sync();
 
-    // // DEBUG: See if the PIDs received the right edges
-    // for (uint i=0; i<n; i++) {
-    //     if (i == p) {
-    //         for (nid_int j=0; j<edges_in_pid; j++) {
-    //             printf("PID %u received edge [%u, %u]\n", p, local_edges[j][0], local_edges[j][1]);
-    //         }
-    //     }
-    //     bsp_sync();
-    // }
+    // DEBUG
+    // Check that every PID received the right edges.
+    debug_expected_edges(local_edges, edges_in_pid);
 
-    // Step d)
-    //
-    // Set up the structure in the process. No communication is required here.
 
-    nid_int maximum_nodes = calculate_maximum_nodes_in_process(local_edges,
-                            nodes_in_pid, edges_in_pid, amountOfNodes);
 
-    // // DEBUG: Check the theoretical limit that each node may receive.
-    // for (uint i=0; i<n; i++) {
-    //     if (i == p) {
-    //         printf("In theory, PID %u process can receive up to %u nodes.\n", p, maximum_nodes);
-    //     }
-    //     bsp_sync();
-    // }
+    /* Step d)
+    **
+    ** Set up the structure in the process. No communication is required here.
+    */
 
-    // Create the node structures
-    struct node **nodes = malloc(maximum_nodes * sizeof(struct node *));
-    nodes_in_pid = 0;
-    initialize_nodes(      nodes, &nodes_in_pid, 
-                     local_edges,  edges_in_pid, amountOfNodes);
+    struct graph *g = load_structure(amountOfNodes, edges_in_pid, local_edges);
 
-    // // DEBUG: Check if the nodes have initialised successfully.
-    // for (uint i=0; i<n; i++) {
-    //     if (i == p) {
-    //         printf("PID %u: %u nodes found\n", p, nodes_in_pid);
-    //         // for (nid_int j=0; j<nodes_in_pid; j++) {
-    //         //     show_node(nodes[j]);
-    //         // }
-    //     }
-    //     bsp_sync();
-    // }
+    // DEBUG
+    // Check that the node have been initialised properly.
+    debug_graph_setup(g);
 
+    // Clean up memory and BSP registers
+    bsp_pop_reg(&edges_in_pid);
+    bsp_pop_reg(&amountOfNodes);
     free(local_edges);
+
     bsp_sync();
 
 
-    nid_int (*matches)[2] = malloc((maximum_nodes)/2 * 2 * sizeof(nid_int));
-    nid_int matches_found = 0;
 
 
     /***********************************
-    *           SUPERSTEP 1            *
+    *            SUPERSTEP 1           *
     ************************************
     * Get rid of all nodes of degree 1 *
     ************************************/
@@ -164,23 +150,45 @@ void spmd() {
     while (true) {
         todo = get_todo_list();
 
-
+        remove_singletons(todo, g);
 
         response = send_instructions(todo);
 
-        // DEBUG: Check which responses were received
-        debug_instruction_response(response);
+        // // DEBUG
+        // // Check which responses were received
+        // debug_instruction_response(response, todo->expected_responses);
 
         // Continue to the next phase when communication has stopped.
         if (todo->expected_responses == 0) {
+            unallocate_todo_list(todo);
+            free(response);
+
             break;
         }
+
+        // Interpret the instructions
+        //printf("Interpreting instructions!\n");
+        for (nid_int i=0; i<todo->expected_responses; i++) {
+            //show_instruction(response[i]);
+            interpret_instruction(todo, g, &(response[i]));
+        }
+
+        // // DEBUG
+        // // Check what the graph looks like now.
+        // bsp_sync();
+        // debug_graph_setup(g);
 
         // Clean up memory
         unallocate_todo_list(todo);
         free(response);
+
+        // // Debug break
+        // break;
     }
 
+    debug_graph_setup(g);
+
+    unallocate_graph(g);
 
     bsp_end();
 }

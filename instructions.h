@@ -1,4 +1,3 @@
-#include "structures.h"
 #include "utilities.h"
 
 // The defined instructions.
@@ -73,11 +72,12 @@ struct instruction *instruction_concatenate_snake(nid_int hunter_base,
  * Create the instruction to delete a node from the graph.
  *
  * Parameter:
- * - `nid`      Node identifier that needs to be forgotten.
+ * - `nid`          Node identifier that needs to be forgotten.
+ * - `neighbour`    Node identifier that is connected to the node.
  *
- * Returns:     Instruction to remove the node.
+ * Returns:         Instruction to remove the node.
  */
-struct instruction *instruction_delete_node(nid_int nid);
+struct instruction *instruction_delete_node(nid_int nid, nid_int neighbour);
 
 /**
  * Create the instruction to inherit a small snake (snek) by a bigger snake.

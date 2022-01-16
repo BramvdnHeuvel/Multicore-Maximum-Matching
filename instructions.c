@@ -38,22 +38,21 @@ struct instruction *instruction_concatenate_snake(nid_int hunter_base,
  * Create the instruction to delete a node from the graph.
  *
  * Parameter:
- * - `nid`      Node identifier that needs to be forgotten.
+ * - `nid`          Node identifier that needs to be forgotten.
+ * - `neighbour`    Node identifier that is connected to the node.
  *
- * Returns:     Instruction to remove the node.
+ * Returns:         Instruction to remove the node.
  */
-struct instruction *instruction_delete_node(nid_int nid) {
+struct instruction *instruction_delete_node(nid_int nid, nid_int neighbour) {
     struct instruction *ins = malloc(sizeof(struct instruction));
 
-    printf("[PID %u] Filling in content for removal of node %u.\n", bsp_pid(), nid);
     ins->value = DELETE;
     ins->next  = NULL;
     ins->content[0] = nid;
-    ins->content[1] = 0;
+    ins->content[1] = neighbour;
     ins->content[2] = 0;
     ins->content[3] = 0;
-    printf("[PID %u] Node removal successful!\n", bsp_pid());
-
+    
     return ins;
 }
 
@@ -149,7 +148,10 @@ struct instruction *send_instructions(struct todo_list *todo) {
 
     struct instruction *inss = malloc(todo->expected_responses * 
                                       sizeof(struct instruction));
-    bsp_push_reg(inss, todo->expected_responses * sizeof(struct instruction));
+
+    unsigned int mem_size = todo->expected_responses * sizeof(struct instruction);
+
+    bsp_push_reg(inss, mem_size);
     bsp_sync();
     
     for (uint i=0; i<n; i++) {
@@ -257,13 +259,13 @@ void show_instruction(struct instruction ins) {
     printf("< Instruction ");
 
     short int value = ins.value;
-         if (value == 0) {printf("KEEP_ALIVE");}
-    else if (value == 1) {printf("DELETE");}
-    else if (value == 2) {printf("MOVE");}
-    else if (value == 3) {printf("INHERIT");}
-    else if (value == 4) {printf("REVERSE");}
-    else if (value == 5) {printf("CONCATENATE");}
-    else                 {printf("UNKNOWN");}
+         if (value == 0) {printf("KEEP_ALIVE  ");}
+    else if (value == 1) {printf("DELETE      ");}
+    else if (value == 2) {printf("MOVE        ");}
+    else if (value == 3) {printf("INHERIT     ");}
+    else if (value == 4) {printf("REVERSE     ");}
+    else if (value == 5) {printf("CONCATENATE ");}
+    else                 {printf("UNKNOWN     ");}
 
     printf("[ ");
     unsigned short int content_length = sizeof(ins.content) / sizeof(nid_int);
@@ -354,6 +356,7 @@ nid_int *exchange_instruction_offsets(struct todo_list *todo) {
     }
 
     // DEBUG: Get a message matrix
+    bsp_sync();
     for (uint i=0; i<n; i++) {
         if (i == bsp_pid()) {
             if (i == 0) {
@@ -480,7 +483,7 @@ void exchange_instructions(struct instruction **tasks, nid_int *task_length) {
     uint p = bsp_pid();
 
     // Broadcast and listen how many instructions each process has
-    nid_int *numbers = malloc(n *sizeof(nid_int));
+    nid_int *numbers = malloc(n * sizeof(nid_int));
     exchange_instruction_sizes(numbers, *task_length);
 
     // Prepare receiving new values

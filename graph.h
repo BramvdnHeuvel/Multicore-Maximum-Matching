@@ -1,215 +1,95 @@
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
-
-#include "utilities.h"
-#include "snake.h"
+struct graph;
+struct node;
 
 #ifndef GRAPH_STRUCTURES
-#define GRAPH_STRUCTURES 
+#define GRAPH_STRUCTURES
 
-/**
-* Vertex structure in a (sub)graph.
-*
-* Attributes:
-* - `value`         A unique identifier that distinguishes the node.
-* - `connectedTo`   An array of integers that are identifiers to the nodes that
-*                       this node is connected to.
-* - `connections`   Array length of the `connectedTo` attribute.
-* - `eaten`         Boolean whether the node has been eaten by a snake yet.
-* - `head`          Boolean whether the node is the head of a snake looking for
-                        a tail to bite on.
-* - `tail`          Boolean whether the node is a tail that can be bitten.
-* - `eaten_by`      Pointer to the local snake that this node is part of.
-*/
-struct node {
-    uint value;         // Node identifier
+// #include "match.h"
 
-    // Which nodes are we connected to?
-    uint *connectedTo;  // Which ones?
-    uint  connections;  // How many?
-
-    // Snake operations
-    bool eaten;         // Whether the node has been eaten by a snake
-    bool head;          // Whether the node is a head /\_ 
-    bool tail;          // Whether the node is a tail [] 
-    struct snake *eaten_by; // Snake that the node is part of
-};
-
-
-/**
-* Graph structure to contain a collection of nodes
-*
-* Attributes:
-* - `nodes`         Array of pointers to node structures that are part
-                        of the graph.
-* - `length`        Array length of the `nodes` attribute.
-*/
 struct graph {
-    struct node **nodes;
-    int length;
+    struct node **vertex;
+
+    struct matching *m;
+
+    nid_int max_size;
+    nid_int local_degree;
+    nid_int global_degree;
 };
+
+struct node {
+    nid_int  value;
+
+    nid_int *connections;
+    nid_int  degree;
+};
+
 #endif
 
 /**
-* Create a new node structure with default settings.
-*
-* Parameters:
-* - `n`             Unique identifier of the node.
-* - `maxDegree`     The maximum number of connections this node may have.
-*
-* Returns:          Pointer to the newly created node.
-*/
-struct node *create_node(uint n, uint maxDegree);
-
-/**
-* Create a new graph structure with default settings.
-*
-* Parameters:
-* - `maxNodes`      The maximum amount of nodes you're expecting the graph
-                        to contain.
-*
-* Returns:          Pointer to the newly created graph.
-*/
-struct graph *create_graph(uint maxNodes);
-
-/**
-* Create multiple (sub)graphs.
-*
-* This function is generally used to split a graph up into multiple
-* subgraphs so that the graph can be distributed across processes
-* without any overlap of nodes.
-*
-* Parameters:
-* - `n`                 Amount of (sub)graphs to create
-* - `maxNodesPerGraph`  Maximum amount of nodes each graph may contain
-*
-* Returns:              Pointer to an array of pointers to graphs
-*/
-struct graph **create_subgraphs(uint n, uint maxNodesPerGraph);
-
-/**
- * Deepcopy a graph. 
- *
- * If you are unsure whether the processes are waiting for each other to
- * read data outside of their SPMDs, you can create a copy of a graph
- * with this function.
- *
- * This way, all relevant data for a process remains within its thread.
+ * Create a graph structure based on a given set of edges.
  *
  * Parameters:
- * - `g`        A graph structure that needs to be copied
+ * - `total_nodes`  The total amount of nodes across the entire global graph.
+ * - `local_edges`  The amount of edges that have at least one endpoint in this
+ *                  (sub)graph.
+ * - `edges`        Array of edges that have at least one endpoint in this
+ *                  (sub)graph.
  *
- * Returns:     An exact replica of graph `g`, yet all pointers point to
- *                  newly allocated memory.
+ * Returns:         Pointer to a newly created graph structure.
  */
-struct graph *deepcopy_graph(struct graph *g);
+struct graph *load_structure(nid_int total_nodes, nid_int local_edges, 
+                                                  nid_int (*edges)[2]);
 
 /**
- * Deepcopy a node. 
- *
- * If you are unsure whether the processes are waiting for each other to
- * read data outside of their SPMDs, you can create a copy of a node
- * with this function.
- *
- * This way, all relevant data for a process remains within its thread.
+ * Create a node structure.
  *
  * Parameters:
- * - `n`        A node structure that needs to be copied
- *
- * Returns:     An exact replica of node `n`, yet all pointers point to
- *                  newly allocated memory.
+ * - `n`            Unique node identifier.
+ * - `degree`       Array length of parameter `connections`.
  */
-struct node *deepcopy_node(struct node *n);
+struct node *create_node(nid_int n, nid_int degree);
 
 /**
- * Unallocate a graph to free memory.
- *
- * The function also unallocates any nodes that are in the graph.
+ * Remove an edge from a node.
  *
  * Parameters:
- * - `g`        Graph that is freed from memory.
+ * - `nd`       Pointer to the node structure.
+ * - `n`        Unique node identifier that needs to be removed.
+ */
+void remove_edge(struct node *nd, nid_int n);
+
+/**
+ * Remove nodes from the graph that have a degree of 0.
+ *
+ * Parameters:
+ * - `g`        Graph structure.
+ */
+void remove_empty_nodes(struct graph *g);
+
+/**
+ * Remove a node from the graph.
+ *
+ * Parameters:
+ * - `todo`     Todo list structure that stores optional instructions.
+ * - `g`        Graph structure.
+ * - `n`        Unique node identifier of the node that needs to be removed.
+ */
+void remove_node(struct todo_list *todo, struct graph *g, nid_int n);
+
+/**
+ * Erase the graph structure from memory.
+ *
+ * This function also frees any nodes in the graph.
+ *
+ * Parameters:
+ * - `g`        The graph structure that is to be freed from memory.
  */
 void unallocate_graph(struct graph *g);
 
 /**
- * Unallocate a node to free memory.
- *
- * The function also unallocates any nodes that are in the node.
+ * Erase the node structure from memory.
  *
  * Parameters:
- * - `n`        Node that is freed from memory.
+ * - `nd`       The node structure that is to be freed from memory.
  */
-void unallocate_node(struct node *n);
-
-/**
-* Connect two nodes to each other. The operation is symmetrical, 
-* so the order of the two nodes does not matter.
-*
-* Parameters:
-* - `a`             Node structure 1
-* - `b`             Node structure 2
-*/
-void connect_nodes(struct node *a, struct node *b);
-
-/**
-* Add an existing node to a (sub)graph.
-*
-* Parameters:
-* - `n`         Node to add.
-* - `g`         Graph to add the node to.
-*/
-void add_to_graph(struct node *n, struct graph *g);
-
-/**
-* Create a new graph structure based on stdin.
-*
-* The function first expects two numbers: one for the amount of vertices V(G),
-* and one for the amount of vertices E(G).
-* Then, the following E(G) lines contain two numbers between 1 and V(G),
-* which indicate one of the edges between two nodes.
-*
-* Take a look at the following input, for example:
-*
-*       > 6 7
-*       > 1 2
-*       > 2 3
-*       > 3 4
-*       > 3 5
-*       > 4 5
-*       > 4 6
-*       > 5 6
-*
-* This input would create a graph that looks like the following visual example:
-*
-*       (1)   (3)---(5)
-*         \   / \   / \
-*          \ /   \ /   \
-*          (2)   (4)---(6)
-*
-* Returns:          Pointer to the newly created graph
-*/
-struct graph *initialize_graph();
-
-/**
-* Print a graph's representation to stdout.
-*
-* This function has no production use, but it helps debug the structure
-* and makes it easier to traverse the (sub)graph.
-*
-* Parameters:
-* - `g`         Graph that needs to be shown
-*/
-void show_graph(struct graph *g);
-
-/**
-* Print a node's representation to stdout.
-*
-* This function has no production use, but it helps debug the structure
-* and makes it easier to inspect any vertex.
-*
-* Parameters:
-* - `n`         Node that needs to be shown
-*/
-void show_node(struct node *n);
+void unallocate_node(struct node *nd);

@@ -4,21 +4,7 @@
  * throughout the program.
  **/
 
-// uint
-//
-// This value should be at least as large as:
-// - the number of PIDs.
-typedef unsigned int uint;
 
-// nid_int
-//
-// This value should be at least as large as:
-// - the number of nodes    in the input graph;
-// - the number of vertices in the input graph.
-//
-// NOTE: Make sure that you also update the scanf function that looks for
-// these values and casts them into variables.
-typedef unsigned int nid_int;
 
 struct instructions;
 
