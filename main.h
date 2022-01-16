@@ -12,6 +12,17 @@ typedef unsigned int nid_int;
 // NOTE: Make sure that you also update the scanf function that looks for
 // these values and casts them into variables.
 
+// The defined instructions.
+// The instructions are evaluated in an ascending order.
+#define MAX_INSTR_VAL 6
+//------------------- :
+#define CONCATENATE   5
+#define REVERSE       4
+#define INHERIT       3
+#define MOVE          2
+#define DELETE        1
+#define KEEP_ALIVE    0
+
 
 struct graph;
 struct instruction;

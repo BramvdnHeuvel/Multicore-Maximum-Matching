@@ -3,6 +3,7 @@
 #include <stdbool.h>
 
 #include "instructions.h"
+#include "utilities.h"
 
 // PRIVATE FUNCTIONS
 bool same_instruction(struct instruction *a, struct instruction *b);

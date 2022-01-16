@@ -14,7 +14,6 @@
 #include "steps.c"
 #include "utilities.c"
 
-
 static unsigned int AMOUNT_OF_CORES;
 
 /**
