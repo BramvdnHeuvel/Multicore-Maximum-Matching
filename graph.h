@@ -1,30 +1,3 @@
-struct graph;
-struct node;
-
-#ifndef GRAPH_STRUCTURES
-#define GRAPH_STRUCTURES
-
-// #include "match.h"
-
-struct graph {
-    struct node **vertex;
-
-    struct matching *m;
-
-    nid_int max_size;
-    nid_int local_degree;
-    nid_int global_degree;
-};
-
-struct node {
-    nid_int  value;
-
-    nid_int *connections;
-    nid_int  degree;
-};
-
-#endif
-
 /**
  * Create a graph structure based on a given set of edges.
  *

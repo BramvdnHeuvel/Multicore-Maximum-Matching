@@ -1,19 +1,4 @@
 
-
-struct matching;
-
-#ifndef MATCH_STRUCTURES
-#define MATCH_STRUCTURES
-
-struct matching {
-    nid_int (*matches)[2];
-
-    nid_int length;
-    nid_int max_length;
-};
-
-#endif
-
 /**
  * Create a new matching object.
  *

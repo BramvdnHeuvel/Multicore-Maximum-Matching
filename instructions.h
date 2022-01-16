@@ -1,4 +1,3 @@
-#include "utilities.h"
 
 // The defined instructions.
 // The instructions are evaluated in an ascending order.
@@ -11,50 +10,6 @@
 #define DELETE        1
 #define KEEP_ALIVE    0
 
-struct instruction;
-struct todo_list;
-
-#ifndef INSTRUCTIONS_STRUCTURES
-#define INSTRUCTIONS_STRUCTURES
-
-/**
- * Instruction structure that tells another process to perform an operation.
- *
- * Attributes:
- * - `value`    Unique identifier for a pre-defined instruction.
- * - `content`  Node identifiers that specify the operation.
- * - `next`     Pointer to another instruction, linked list style. This pointer
- *              is used in a todo-list and is ignored as soon as the instruction
- *              has been sent to another process.
- */
-struct instruction {
-    short int value;
-
-    nid_int content[4];
-
-    struct instruction *next;
-};
-
-/**
- * To do list that tracks all instructions that will be sent to neighbours.
- *
- * Attributes:
- * - `length`       Amount of instructions that will be sent to each process.
- * - `list_proc`    Linked list of all instructions that will be sent to the
- *                  respective processes.
- * - `latest`       Array of pointers to the instructions at the end of the
- *                  linked list. Speeds up insertion.
- */
-struct todo_list {
-    nid_int *length;
-
-    struct instruction **p_list;
-    struct instruction **latest;
-
-    nid_int expected_responses;
-};
-
-#endif
 
 /**
  * Create the instruction to concatenate a snake.

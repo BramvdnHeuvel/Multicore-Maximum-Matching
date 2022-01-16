@@ -4,21 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-// uint
-//
-// This value should be at least as large as:
-// - the number of PIDs.
-typedef unsigned int uint;
-
-// nid_int
-//
-// This value should be at least as large as:
-// - the number of nodes    in the input graph;
-// - the number of vertices in the input graph.
-//
-// NOTE: Make sure that you also update the scanf function that looks for
-// these values and casts them into variables.
-typedef unsigned int nid_int;
+#include "main.h"
 
 #include "debug.c"
 #include "divide.c"
@@ -188,7 +174,22 @@ void spmd() {
 
     debug_graph_setup(g);
 
-    unallocate_graph(g);
+    // // DEBUG
+    // // Check the graph's state after superstep 1
+    // unallocate_graph(g);
+
+
+
+
+    /***********************************
+    *            SUPERSTEP 2           *
+    ************************************
+    * Create large snakes that travel  *
+    * through the graph as far as      *
+    * possible.                        *
+    ************************************/
+
+
 
     bsp_end();
 }

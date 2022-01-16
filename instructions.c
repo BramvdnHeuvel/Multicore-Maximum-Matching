@@ -146,11 +146,9 @@ struct instruction *send_instructions(struct todo_list *todo) {
 
     nid_int *offsets = exchange_instruction_offsets(todo);
 
-    struct instruction *inss = malloc(todo->expected_responses * 
-                                      sizeof(struct instruction));
-
+    bsp_sync();
     unsigned int mem_size = todo->expected_responses * sizeof(struct instruction);
-
+    struct instruction *inss = malloc(mem_size);
     bsp_push_reg(inss, mem_size);
     bsp_sync();
     
